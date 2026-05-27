@@ -1340,17 +1340,19 @@ let editImgSrc = '';
 
 function switchTab(tab){
   qTab = tab;
-  document.getElementById('tab-builtin').classList.toggle('on', tab==='builtin');
-  document.getElementById('tab-custom').classList.toggle('on', tab==='custom');
-  document.getElementById('addToggleBtn').style.display = tab==='custom' ? '' : 'none';
-  document.getElementById('addFormWrap').classList.remove('open');
-  document.getElementById('qSearch').value = '';
+  function el(id){ return document.getElementById(id); }
+  if(el('tab-builtin')) el('tab-builtin').classList.toggle('on', tab==='builtin');
+  if(el('tab-custom'))  el('tab-custom').classList.toggle('on', tab==='custom');
+  if(el('addToggleBtn')){ el('addToggleBtn').style.display = tab==='custom' ? '' : 'none'; el('addToggleBtn').textContent='➕ 新增自訂題目'; }
+  if(el('addFormWrap')) el('addFormWrap').classList.remove('open');
+  if(el('qSearch'))     el('qSearch').value = '';
   renderQList();
 }
 
 function renderQList(){
-  const search = document.getElementById('qSearch').value.trim().toLowerCase();
   const list = document.getElementById('qList');
+  if(!list) return;
+  const search = (document.getElementById('qSearch')||{value:''}).value.trim().toLowerCase();
   const pairs = qTab==='builtin' ? builtinPairs : customPairs;
   const filtered = search ? pairs.filter(p=>p.item.toLowerCase().includes(search)) : pairs;
   if(!filtered.length){
@@ -1379,8 +1381,10 @@ function renderQList(){
 
 function toggleAddForm(){
   const wrap = document.getElementById('addFormWrap');
+  if(!wrap) return;
   const isOpen = wrap.classList.toggle('open');
-  document.getElementById('addToggleBtn').textContent = isOpen ? '✕ 關閉' : '➕ 新增自訂題目';
+  const tog = document.getElementById('addToggleBtn');
+  if(tog) tog.textContent = isOpen ? '✕ 關閉' : '➕ 新增自訂題目';
 }
 
 // ── Add new custom ──
@@ -1530,8 +1534,8 @@ function showResult(){
 document.getElementById('btnAgain').addEventListener('click',()=>startGame(G.count||6));
 document.getElementById('btnClose').addEventListener('click',()=>document.getElementById('resModal').style.display='none');
 
-// ═══════════════ ADMIN ═══════════════
-const ADMIN_PASSWORD = 'peiyu0222'; // ← 修改這裡設定你的密碼
+// ═══ ADMIN ═══
+const ADMIN_PASSWORD = 'taiwan2024'; // ← 修改這裡設定你的密碼
 let isAdmin = false;
 
 function toggleAdmin(){
@@ -1545,12 +1549,10 @@ function toggleAdmin(){
     document.getElementById('pwModal').style.display = 'flex';
     document.getElementById('pwInput').value = '';
     document.getElementById('pwError').style.display = 'none';
-    setTimeout(()=>document.getElementById('pwInput').focus(), 100);
+    setTimeout(()=>document.getElementById('pwInput').focus(), 150);
   }
 }
-function closePwModal(){
-  document.getElementById('pwModal').style.display = 'none';
-}
+
 function checkPassword(){
   const val = document.getElementById('pwInput').value;
   if(val === ADMIN_PASSWORD){
@@ -1560,7 +1562,8 @@ function checkPassword(){
     document.getElementById('adminBtn').textContent = '🔓';
     document.getElementById('adminBtn').title = '登出管理員';
     showToast('✓ 管理員模式已開啟','ok');
-    switchTab('builtin');
+    qTab = 'builtin';
+    renderQList();
   } else {
     document.getElementById('pwError').style.display = 'block';
     document.getElementById('pwInput').value = '';
