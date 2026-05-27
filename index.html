@@ -77,7 +77,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text
 .map-zoom-bar button{width:28px;height:28px;border:none;border-radius:6px;background:rgba(255,255,255,.85);color:#333;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.18);font-family:monospace;line-height:1}
 .map-zoom-bar button:hover{background:#fff}
 .map-hint{position:absolute;bottom:8px;left:8px;font-size:10px;color:rgba(0,0,0,.45);pointer-events:none}
-.region{fill:var(--land);stroke:#fff;stroke-width:2;cursor:pointer;transition:fill .18s}
+.region{fill:var(--land);stroke:#fff;stroke-width:2;cursor:pointer;transition:fill .18s;touch-action:none}
 .region:hover:not(.matched):not(.inactive){fill:var(--land-hover)}
 .region.active{fill:var(--land-active)}
 .region.matched{fill:var(--land-matched);cursor:default}
@@ -207,7 +207,10 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text
 @media(max-width:720px){
   .layout{grid-template-columns:1fr}
   .left{border-right:none;border-bottom:1.5px solid var(--border)}
-  .map-wrap{height:320px}
+  .map-wrap{height:380px}
+  .map-label{font-size:18px}
+  .region{stroke-width:3}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
 }
 </style>
 </head>
@@ -1222,9 +1225,16 @@ function resetView(){vx=0;vy=0;vscale=1;applyView();}
   },{passive:false});
   // Touch
   let lastDist=0, t1x=0,t1y=0,t2x=0,t2y=0;
+  let touchMoved = false;
+  let touchStartX = 0, touchStartY = 0;
+
   wrap.addEventListener('touchstart',e=>{
+    touchMoved = false;
     if(e.touches.length===1){
-      dragging=true; startX=e.touches[0].clientX; startY=e.touches[0].clientY; startVx=vx; startVy=vy;
+      dragging=true;
+      startX=e.touches[0].clientX; startY=e.touches[0].clientY;
+      touchStartX=startX; touchStartY=startY;
+      startVx=vx; startVy=vy;
     } else if(e.touches.length===2){
       dragging=false;
       const dx=e.touches[0].clientX-e.touches[1].clientX;
@@ -1233,24 +1243,48 @@ function resetView(){vx=0;vy=0;vscale=1;applyView();}
     }
     e.preventDefault();
   },{passive:false});
+
   wrap.addEventListener('touchmove',e=>{
     if(e.touches.length===1 && dragging){
-      const rect=wrap.getBoundingClientRect();
-      const px2svgX=BASE_VB.w/vscale/rect.width;
-      const px2svgY=BASE_VB.h/vscale/rect.height;
-      vx=startVx-(e.touches[0].clientX-startX)*px2svgX;
-      vy=startVy-(e.touches[0].clientY-startY)*px2svgY;
-      applyView();
+      const dx = e.touches[0].clientX - touchStartX;
+      const dy = e.touches[0].clientY - touchStartY;
+      // Only treat as drag if moved more than 8px
+      if(Math.hypot(dx,dy) > 8) touchMoved = true;
+      if(touchMoved){
+        const rect=wrap.getBoundingClientRect();
+        const px2svgX=BASE_VB.w/vscale/rect.width;
+        const px2svgY=BASE_VB.h/vscale/rect.height;
+        vx=startVx-(e.touches[0].clientX-startX)*px2svgX;
+        vy=startVy-(e.touches[0].clientY-startY)*px2svgY;
+        applyView();
+      }
     } else if(e.touches.length===2){
       const dx=e.touches[0].clientX-e.touches[1].clientX;
       const dy=e.touches[0].clientY-e.touches[1].clientY;
       const dist=Math.hypot(dx,dy);
       if(lastDist>0) zoomMap(dist/lastDist);
       lastDist=dist;
+      touchMoved=true;
     }
     e.preventDefault();
   },{passive:false});
-  wrap.addEventListener('touchend',()=>{dragging=false;lastDist=0;});
+
+  // 只在地圖區域阻止瀏覽器預設的捏合縮放，不影響頁面其他地方
+  wrap.addEventListener('gesturestart', e=>e.preventDefault(), {passive:false});
+  wrap.addEventListener('gesturechange', e=>e.preventDefault(), {passive:false});
+
+  wrap.addEventListener('touchend',e=>{
+    // If finger didn't move → treat as tap → fire click on the element
+    if(!touchMoved && e.changedTouches.length===1){
+      const t = e.changedTouches[0];
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      if(el && el.classList.contains('region')){
+        const regionId = el.id.replace('r-','');
+        onMapClick(regionId);
+      }
+    }
+    dragging=false; lastDist=0; touchMoved=false;
+  });
 })();
 
 // ═══════════════ BUILD MAP ═══════════════
