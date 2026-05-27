@@ -1535,7 +1535,7 @@ document.getElementById('btnAgain').addEventListener('click',()=>startGame(G.cou
 document.getElementById('btnClose').addEventListener('click',()=>document.getElementById('resModal').style.display='none');
 
 // ═══ ADMIN ═══
-const ADMIN_PASSWORD = 'taiwan2024'; // ← 修改這裡設定你的密碼
+const ADMIN_PASSWORD = 'peiyu0222'; // ← 修改這裡設定你的密碼
 let isAdmin = false;
 
 function toggleAdmin(){
@@ -1576,4 +1576,20 @@ startGame(6);
 </script>
 
 
+
+<div class="overlay" id="pwModal" style="display:none">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-icon">🔒</div>
+    <h2>管理員登入</h2>
+    <p>請輸入密碼才能編輯題目</p>
+    <input type="password" id="pwInput" placeholder="輸入密碼"
+      style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;outline:none;margin-bottom:12px;text-align:center;letter-spacing:4px"
+      onkeydown="if(event.key==='Enter')checkPassword()">
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" style="flex:1" onclick="document.getElementById('pwModal').style.display='none'">取消</button>
+      <button class="btn btn-p" style="flex:2" onclick="checkPassword()">確認登入</button>
+    </div>
+    <div id="pwError" style="color:var(--red);font-size:12px;text-align:center;margin-top:8px;display:none">❌ 密碼錯誤，請再試一次</div>
+  </div>
+</div>
 </body></html>
